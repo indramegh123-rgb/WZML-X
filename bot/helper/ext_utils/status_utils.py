@@ -17,6 +17,7 @@ from ... import (
 from ...core.config_manager import Config
 from ..telegram_helper.button_build import ButtonMaker
 
+
 SIZE_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
 
 
@@ -43,6 +44,7 @@ class MirrorStatus:
 class EngineStatus:
     def __init__(self):
         ver = bot_cache.get("eng_versions", {})
+
         self.STATUS_ARIA2 = f"Aria2 v{ver.get('aria2', 'N/A')}"
         self.STATUS_AIOHTTP = f"AioHttp v{ver.get('aiohttp', 'N/A')}"
         self.STATUS_GDAPI = f"Google-API v{ver.get('gapi', 'N/A')}"
@@ -86,37 +88,58 @@ async def get_task_by_gid(gid: str):
         for tk in task_dict.values():
             if hasattr(tk, "seeding"):
                 await tk.update()
+
             if tk.gid() == gid or tk.gid().startswith(gid):
                 return tk
+
         return None
 
 
 async def get_specific_tasks(status, user_id):
     if status == "All":
         if user_id:
-            return [tk for tk in task_dict.values() if tk.listener.user_id == user_id]
+            return [
+                tk for tk in task_dict.values()
+                if tk.listener.user_id == user_id
+            ]
         else:
             return list(task_dict.values())
+
     tasks_to_check = (
-        [tk for tk in task_dict.values() if tk.listener.user_id == user_id]
+        [
+            tk for tk in task_dict.values()
+            if tk.listener.user_id == user_id
+        ]
         if user_id
         else list(task_dict.values())
     )
+
     coro_tasks = []
-    coro_tasks.extend(tk for tk in tasks_to_check if iscoroutinefunction(tk.status))
-    coro_statuses = await gather(*[tk.status() for tk in coro_tasks])
+    coro_tasks.extend(
+        tk for tk in tasks_to_check
+        if iscoroutinefunction(tk.status)
+    )
+
+    coro_statuses = await gather(
+        *[tk.status() for tk in coro_tasks]
+    )
+
     result = []
     coro_index = 0
+
     for tk in tasks_to_check:
         if tk in coro_tasks:
             st = coro_statuses[coro_index]
             coro_index += 1
         else:
             st = tk.status()
+
         if (st == status) or (
-            status == MirrorStatus.STATUS_DOWNLOAD and st not in STATUSES.values()
+            status == MirrorStatus.STATUS_DOWNLOAD
+            and st not in STATUSES.values()
         ):
             result.append(tk)
+
     return result
 
 
@@ -133,10 +156,12 @@ def get_raw_file_size(size):
 def get_readable_file_size(size_in_bytes):
     if not size_in_bytes:
         return "0B"
+
     if size_in_bytes < 0:
         return "Unknown"
 
     index = 0
+
     while size_in_bytes >= 1024 and index < len(SIZE_UNITS) - 1:
         size_in_bytes /= 1024
         index += 1
@@ -145,38 +170,68 @@ def get_readable_file_size(size_in_bytes):
 
 
 def get_readable_time(seconds: int):
-    periods = [("d", 86400), ("h", 3600), ("m", 60), ("s", 1)]
+    periods = [
+        ("d", 86400),
+        ("h", 3600),
+        ("m", 60),
+        ("s", 1),
+    ]
+
     result = ""
+
     for period_name, period_seconds in periods:
         if seconds >= period_seconds:
-            period_value, seconds = divmod(seconds, period_seconds)
+            period_value, seconds = divmod(
+                seconds,
+                period_seconds,
+            )
             result += f"{int(period_value)}{period_name}"
+
     return result
 
 
 def get_raw_time(time_str: str) -> int:
-    time_units = {"d": 86400, "h": 3600, "m": 60, "s": 1}
+    time_units = {
+        "d": 86400,
+        "h": 3600,
+        "m": 60,
+        "s": 1,
+    }
+
     return sum(
         int(value) * time_units[unit]
-        for value, unit in findall(r"(\d+)([dhms])", time_str)
+        for value, unit in findall(
+            r"(\d+)([dhms])",
+            time_str,
+        )
     )
 
 
 def time_to_seconds(time_duration):
     try:
         parts = time_duration.split(":")
+
         if len(parts) == 3:
             hours, minutes, seconds = map(float, parts)
+
         elif len(parts) == 2:
             hours = 0
             minutes, seconds = map(float, parts)
+
         elif len(parts) == 1:
             hours = 0
             minutes = 0
             seconds = float(parts[0])
+
         else:
             return 0
-        return hours * 3600 + minutes * 60 + seconds
+
+        return (
+            hours * 3600
+            + minutes * 60
+            + seconds
+        )
+
     except Exception:
         return 0
 
@@ -184,105 +239,441 @@ def time_to_seconds(time_duration):
 def speed_string_to_bytes(size_text: str):
     size = 0
     size_text = size_text.lower()
+
     if "k" in size_text:
-        size += float(size_text.split("k")[0]) * 1024
+        size += float(
+            size_text.split("k")[0]
+        ) * 1024
+
     elif "m" in size_text:
-        size += float(size_text.split("m")[0]) * 1048576
+        size += float(
+            size_text.split("m")[0]
+        ) * 1048576
+
     elif "g" in size_text:
-        size += float(size_text.split("g")[0]) * 1073741824
+        size += float(
+            size_text.split("g")[0]
+        ) * 1073741824
+
     elif "t" in size_text:
-        size += float(size_text.split("t")[0]) * 1099511627776
+        size += float(
+            size_text.split("t")[0]
+        ) * 1099511627776
+
     elif "b" in size_text:
-        size += float(size_text.split("b")[0])
+        size += float(
+            size_text.split("b")[0]
+        )
+
     return size
 
+
+# ═══════════════════════════════════════════════
+#              🎯 PREMIUM TARGET BAR
+# ═══════════════════════════════════════════════
 
 def get_progress_bar_string(pct):
     pct = float(str(pct).strip("%"))
     p = min(max(pct, 0), 100)
-    cFull = int(p // 8)
-    cPart = int(p % 8 - 1)
-    p_str = "■" * cFull
-    if cPart >= 0:
-        p_str += ["▤", "▥", "▦", "▧", "▨", "▩", "■"][cPart]
-    p_str += "□" * (12 - cFull)
-    return f"[{p_str}]"
+
+    total = 12
+
+    position = (p / 100) * total
+    completed = int(position)
+    fraction = position - completed
+
+    # Current circle filling level:
+    # ○ → ◔ → ◑ → ◕ → ●
+
+    if completed >= total:
+        return "  ".join(["●"] * total)
+
+    if fraction < 0.25:
+        current = "◔"
+    elif fraction < 0.50:
+        current = "◑"
+    elif fraction < 0.75:
+        current = "◕"
+    else:
+        current = "●"
+
+    circles = []
+
+    for i in range(total):
+        if i < completed:
+            circles.append("●")
+
+        elif i == completed:
+            circles.append(current)
+
+        else:
+            circles.append("○")
+
+    return "  ".join(circles)
 
 
-async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=1):
+# ═══════════════════════════════════════════════
+#               🎯 STATUS MESSAGE
+# ═══════════════════════════════════════════════
+
+async def get_readable_message(
+    sid,
+    is_user,
+    page_no=1,
+    status="All",
+    page_step=1,
+):
     msg = ""
     button = None
 
-    tasks = await get_specific_tasks(status, sid if is_user else None)
+    tasks = await get_specific_tasks(
+        status,
+        sid if is_user else None,
+    )
 
     STATUS_LIMIT = Config.STATUS_LIMIT
     tasks_no = len(tasks)
-    pages = (max(tasks_no, 1) + STATUS_LIMIT - 1) // STATUS_LIMIT
+
+    pages = (
+        (max(tasks_no, 1) + STATUS_LIMIT - 1)
+        // STATUS_LIMIT
+    )
+
     if page_no > pages:
         page_no = (page_no - 1) % pages + 1
         status_dict[sid]["page_no"] = page_no
+
     elif page_no < 1:
         page_no = pages - (abs(page_no) % pages)
         status_dict[sid]["page_no"] = page_no
-    start_position = (page_no - 1) * STATUS_LIMIT
+
+    start_position = (
+        (page_no - 1) * STATUS_LIMIT
+    )
 
     for index, task in enumerate(
-        tasks[start_position : STATUS_LIMIT + start_position], start=1
+        tasks[
+            start_position:
+            STATUS_LIMIT + start_position
+        ],
+        start=1,
     ):
+
         if status != "All":
             tstatus = status
+
         elif iscoroutinefunction(task.status):
             tstatus = await task.status()
+
         else:
             tstatus = task.status()
-        msg += f"<b>{index + start_position}.</b> "
-        msg += f"<b><i>{escape(f'{task.name()}')}</i></b>"
-        if task.listener.subname:
-            msg += f"\n┖ <b>Sub Name</b> → <i>{task.listener.subname}</i>"
-        elapsed = time() - task.listener.message.date.timestamp()
 
-        msg += f"\n\n<b>Task By {task.listener.message.from_user.mention(style='html')} </b> ( #ID{task.listener.message.from_user.id} )"
+        # ─────────────────────────────────────
+        # Task type
+        # ─────────────────────────────────────
+
+        task_titles = {
+            MirrorStatus.STATUS_DOWNLOAD: "LEECH",
+            MirrorStatus.STATUS_UPLOAD: "UPLOAD",
+            MirrorStatus.STATUS_CLONE: "CLONE",
+            MirrorStatus.STATUS_QUEUEDL: "QUEUE",
+            MirrorStatus.STATUS_QUEUEUP: "QUEUE",
+            MirrorStatus.STATUS_PAUSED: "PAUSED",
+            MirrorStatus.STATUS_ARCHIVE: "ARCHIVE",
+            MirrorStatus.STATUS_EXTRACT: "EXTRACT",
+            MirrorStatus.STATUS_SPLIT: "SPLIT",
+            MirrorStatus.STATUS_CHECK: "CHECK",
+            MirrorStatus.STATUS_SEED: "SEED",
+            MirrorStatus.STATUS_SAMVID: "SAMVID",
+            MirrorStatus.STATUS_CONVERT: "CONVERT",
+            MirrorStatus.STATUS_FFMPEG: "FFMPEG",
+            MirrorStatus.STATUS_YT: "YOUTUBE",
+            MirrorStatus.STATUS_METADATA: "METADATA",
+            MirrorStatus.STATUS_SEEDR: "SEEDR",
+        }
+
+        task_title = task_titles.get(
+            tstatus,
+            "TASK",
+        )
+
+        # ─────────────────────────────────────
+        # Header
+        # ─────────────────────────────────────
+
+        msg += (
+            f"<b>╭━━━━━━━━━━━━━━━━━━━━━━━━╮</b>\n"
+        )
+
+        msg += (
+            f"<b>┃ 👑 {task_title} 𝗧𝗔𝗦𝗞 "
+            f"𝟬{index + start_position}</b>\n"
+        )
+
+        msg += (
+            f"<b>┣━━━━━━━━━━━━━━━━━━━━━━━━┫</b>\n"
+        )
+
+        # ─────────────────────────────────────
+        # File
+        # ─────────────────────────────────────
+
+        msg += "<b>┃</b>\n"
+
+        msg += (
+            f"<b>┃ 📁 𝗙𝗜𝗟𝗘</b>\n"
+        )
+
+        msg += (
+            f"┃ <i>{escape(str(task.name()))}</i>\n"
+        )
+
+        # ─────────────────────────────────────
+        # Sub Name
+        # ─────────────────────────────────────
+
+        if task.listener.subname:
+            msg += (
+                f"┃ 🏷️ <b>𝗦𝗨𝗕 𝗡𝗔𝗠𝗘</b>\n"
+            )
+
+            msg += (
+                f"┃ <i>{escape(str(task.listener.subname))}</i>\n"
+            )
+
+        # ─────────────────────────────────────
+        # Task By
+        # ─────────────────────────────────────
+
+        elapsed = (
+            time()
+            - task.listener.message.date.timestamp()
+        )
+
+        msg += "<b>┃</b>\n"
+
+        msg += (
+            f"┃ 👤 <b>𝗧𝗔𝗦𝗞 𝗕𝗬</b>\n"
+        )
+
+        msg += (
+            f"┃ {task.listener.message.from_user.mention(style='html')}"
+        )
+
+        msg += (
+            f"  <i>(#ID"
+            f"{task.listener.message.from_user.id})</i>\n"
+        )
+
+        # ─────────────────────────────────────
+        # Super Group Link
+        # ─────────────────────────────────────
+
         if task.listener.is_super_chat:
-            msg += f" <i>[<a href='{task.listener.message.link}'>Link</a>]</i>"
+            msg += (
+                f"┃ 🔗 <a href='{task.listener.message.link}'>"
+                f"<b>Open Task Message</b></a>\n"
+            )
+
+        # ─────────────────────────────────────
+        # Progress
+        # ─────────────────────────────────────
 
         if (
-            tstatus not in [MirrorStatus.STATUS_SEED, MirrorStatus.STATUS_QUEUEUP]
+            tstatus not in [
+                MirrorStatus.STATUS_SEED,
+                MirrorStatus.STATUS_QUEUEUP,
+            ]
             and task.listener.progress
         ):
+
             progress = task.progress()
-            msg += f"\n┟ {get_progress_bar_string(progress)} <i>{progress}</i>"
+
+            msg += "<b>┃</b>\n"
+
+            msg += (
+                f"┃ 🎯 <b>𝗣𝗥𝗢𝗚𝗥𝗘𝗦𝗦</b>\n"
+            )
+
+            msg += (
+                f"┃ {get_progress_bar_string(progress)}\n"
+            )
+
+            msg += (
+                f"┃ <b>{progress}%</b>\n"
+            )
+
+            # ─────────────────────────────────
+            # Processed / Count
+            # ─────────────────────────────────
+
             if task.listener.subname:
-                subsize = f" / {get_readable_file_size(task.listener.subsize)}"
-                ac = len(task.listener.files_to_proceed)
-                count = f"( {task.listener.proceed_count} / {ac or '?'} )"
+                subsize = (
+                    f" / "
+                    f"{get_readable_file_size(task.listener.subsize)}"
+                )
+
+                ac = len(
+                    task.listener.files_to_proceed
+                )
+
+                count = (
+                    f"{task.listener.proceed_count}"
+                    f" / {ac or '?'}"
+                )
+
             else:
                 subsize = ""
                 count = ""
-            msg += f"\n┠ <b>Processed</b> → <i>{task.processed_bytes()}{subsize} of {task.size()}</i>"
+
+            msg += (
+                f"┃ 📦 <b>𝗣𝗥𝗢𝗖𝗘𝗦𝗦𝗘𝗗</b> "
+                f"→ <i>{task.processed_bytes()}"
+                f"{subsize} / {task.size()}</i>\n"
+            )
+
             if count:
-                msg += f"\n┠ <b>Count:</b> → <b>{count}</b>"
-            msg += f"\n┠ <b>Status</b> → <b>{tstatus}</b>"
-            msg += f"\n┠ <b>Speed</b> → <i>{task.speed()}</i>"
-            msg += f"\n┠ <b>Time</b> → <i>{task.eta()} of {get_readable_time(elapsed + get_raw_time(task.eta()))} ( {get_readable_time(elapsed)} )</i>"
+                msg += (
+                    f"┃ 🔢 <b>𝗖𝗢𝗨𝗡𝗧</b> → "
+                    f"<b>{count}</b>\n"
+                )
+
+            # ─────────────────────────────────
+            # Status / Speed
+            # ─────────────────────────────────
+
+            msg += (
+                f"┃ 🟢 <b>𝗦𝗧𝗔𝗧𝗨𝗦</b> → "
+                f"<b>{tstatus}</b>\n"
+            )
+
+            msg += (
+                f"┃ 🚀 <b>𝗦𝗣𝗘𝗘𝗗</b> → "
+                f"<i>{task.speed()}</i>\n"
+            )
+
+            # ─────────────────────────────────
+            # Time
+            # ─────────────────────────────────
+
+            msg += (
+                f"┃ ⏱️ <b>𝗧𝗜𝗠𝗘</b>\n"
+            )
+
+            msg += (
+                f"┃ ETA → <i>{task.eta()}</i>\n"
+            )
+
+            msg += (
+                f"┃ Elapsed → "
+                f"<i>{get_readable_time(elapsed)}</i>\n"
+            )
+
+            # ─────────────────────────────────
+            # Torrent information
+            # ─────────────────────────────────
+
             if tstatus == MirrorStatus.STATUS_DOWNLOAD and (
-                task.listener.is_torrent or task.listener.is_qbit
+                task.listener.is_torrent
+                or task.listener.is_qbit
             ):
                 try:
-                    msg += f"\n┠ <b>Seeders</b> → {task.seeders_num()} | <b>Leechers</b> → {task.leechers_num()}"
+                    msg += (
+                        f"┃ 👥 <b>𝗦𝗘𝗘𝗗𝗘𝗥𝗦</b> → "
+                        f"{task.seeders_num()}\n"
+                    )
+
+                    msg += (
+                        f"┃ 👤 <b>𝗟𝗘𝗘𝗖𝗛𝗘𝗥𝗦</b> → "
+                        f"{task.leechers_num()}\n"
+                    )
+
                 except Exception:
                     pass
-            # TODO: Add Connected Peers
+
+        # ─────────────────────────────────────
+        # Seeding
+        # ─────────────────────────────────────
+
         elif tstatus == MirrorStatus.STATUS_SEED:
-            msg += f"\n┠ <b>Size</b> → <i>{task.size()}</i> | <b>Uploaded</b>  → <i>{task.uploaded_bytes()}</i>"
-            msg += f"\n┠ <b>Status</b> → <b>{tstatus}</b>"
-            msg += f"\n┠ <b>Speed</b> → <i>{task.seed_speed()}</i>"
-            msg += f"\n┠ <b>Ratio</b> → <i>{task.ratio()}</i>"
-            msg += f"\n┠ <b>Time</b> → <i>{task.seeding_time()}</i> | <b>Elapsed</b> → <i>{get_readable_time(elapsed)}</i>"
+
+            msg += "<b>┃</b>\n"
+
+            msg += (
+                f"┃ 📦 <b>𝗦𝗜𝗭𝗘</b> → "
+                f"<i>{task.size()}</i>\n"
+            )
+
+            msg += (
+                f"┃ 📤 <b>𝗨𝗣𝗟𝗢𝗔𝗗𝗘𝗗</b> → "
+                f"<i>{task.uploaded_bytes()}</i>\n"
+            )
+
+            msg += (
+                f"┃ 🟢 <b>𝗦𝗧𝗔𝗧𝗨𝗦</b> → "
+                f"<b>{tstatus}</b>\n"
+            )
+
+            msg += (
+                f"┃ 🚀 <b>𝗦𝗣𝗘𝗘𝗗</b> → "
+                f"<i>{task.seed_speed()}</i>\n"
+            )
+
+            msg += (
+                f"┃ 📊 <b>𝗥𝗔𝗧𝗜𝗢</b> → "
+                f"<i>{task.ratio()}</i>\n"
+            )
+
+            msg += (
+                f"┃ ⏱️ <b>𝗧𝗜𝗠𝗘</b> → "
+                f"<i>{task.seeding_time()}</i>\n"
+            )
+
+            msg += (
+                f"┃ ⌛ <b>𝗘𝗟𝗔𝗣𝗦𝗘𝗗</b> → "
+                f"<i>{get_readable_time(elapsed)}</i>\n"
+            )
+
+        # ─────────────────────────────────────
+        # Other status
+        # ─────────────────────────────────────
+
         else:
-            msg += f"\n┠ <b>Size</b> → <i>{task.size()}</i>"
-        msg += f"\n┠ <b>Engine</b> → <i>{task.engine}</i>"
-        msg += f"\n┠ <b>In Mode</b> → <i>{task.listener.mode[0]}</i>"
-        msg += f"\n┠ <b>Out Mode</b> → <i>{task.listener.mode[1]}</i>"
+
+            msg += "<b>┃</b>\n"
+
+            msg += (
+                f"┃ 📦 <b>𝗦𝗜𝗭𝗘</b> → "
+                f"<i>{task.size()}</i>\n"
+            )
+
+        # ─────────────────────────────────────
+        # Engine
+        # ─────────────────────────────────────
+
+        msg += (
+            f"┃ ⚙️ <b>𝗘𝗡𝗚𝗜𝗡𝗘</b> → "
+            f"<i>{task.engine}</i>\n"
+        )
+
+        # ─────────────────────────────────────
+        # Modes
+        # ─────────────────────────────────────
+
+        msg += (
+            f"┃ 📥 <b>𝗜𝗡 𝗠𝗢𝗗𝗘</b> → "
+            f"<i>{task.listener.mode[0]}</i>\n"
+        )
+
+        msg += (
+            f"┃ 📤 <b>𝗢𝗨𝗧 𝗠𝗢𝗗𝗘</b> → "
+            f"<i>{task.listener.mode[1]}</i>\n"
+        )
+
+        # ─────────────────────────────────────
+        # Select
+        # ─────────────────────────────────────
+
         from ..telegram_helper.bot_commands import BotCommands
 
         if tstatus in [
@@ -290,45 +681,165 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             MirrorStatus.STATUS_PAUSED,
             MirrorStatus.STATUS_QUEUEDL,
         ]:
+
             if (
                 task.listener.is_torrent
                 or task.listener.is_qbit
                 or task.listener.is_nzb
             ):
-                msg += f"\n┠ <b>Select</b> → /{BotCommands.SelectCommand[1]}_{task.gid()[:8]}"
+                msg += (
+                    f"┃ 🎛️ <b>𝗦𝗘𝗟𝗘𝗖𝗧</b>\n"
+                )
 
-        msg += f"\n<b>┖ Stop</b> → <i>/{BotCommands.CancelTaskCommand[1]}_{task.gid()[:8]}</i>\n\n"
+                msg += (
+                    f"┃ /{BotCommands.SelectCommand[1]}_"
+                    f"{task.gid()[:8]}\n"
+                )
+
+        # ─────────────────────────────────────
+        # Stop
+        # ─────────────────────────────────────
+
+        msg += "<b>┃</b>\n"
+
+        msg += (
+            f"┃ 🛑 <b>𝗦𝗧𝗢𝗣</b>\n"
+        )
+
+        msg += (
+            f"┃ /{BotCommands.CancelTaskCommand[1]}_"
+            f"{task.gid()[:8]}\n"
+        )
+
+        msg += (
+            f"<b>╰━━━━━━━━━━━━━━━━━━━━━━━━╯</b>\n\n"
+        )
+
+    # ═══════════════════════════════════════════
+    # No active tasks
+    # ═══════════════════════════════════════════
 
     if len(msg) == 0:
+
         if status == "All":
             return None, None
-        else:
-            msg = f"No Active {status} Tasks!\n\n"
 
-    msg += "⌬ <b><u>Bot Stats</u></b>"
+        else:
+            msg = (
+                f"❌ <b>No Active {status} Tasks!</b>\n\n"
+            )
+
+    # ═══════════════════════════════════════════
+    # Bot Stats
+    # ═══════════════════════════════════════════
+
+    msg += (
+        "⌬ 👑 <b><u>𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦</u></b>\n"
+    )
+
     buttons = ButtonMaker()
+
+    # Telegram group TStats
     if not is_user:
         buttons.data_button(
-            "📜 TStats",
+            "📊 𝗧𝗦𝘁𝗮𝘁𝘀",
             f"status {sid} ov",
             position="header",
             style=ButtonStyle.PRIMARY,
         )
+
+    # ─────────────────────────────────────────
+    # Pages
+    # ─────────────────────────────────────────
+
     if len(tasks) > STATUS_LIMIT:
-        msg += f"<b>Page:</b> {page_no}/{pages} | <b>Tasks:</b> {tasks_no} | <b>Step:</b> {page_step}\n"
-        buttons.data_button("<<", f"status {sid} pre", position="header")
-        buttons.data_button(">>", f"status {sid} nex", position="header")
+
+        msg += (
+            f"┟ 📄 <b>Page</b> → "
+            f"{page_no}/{pages}  |  "
+            f"📊 <b>Tasks</b> → {tasks_no}  |  "
+            f"🔢 <b>Step</b> → {page_step}\n"
+        )
+
+        buttons.data_button(
+            "‹‹",
+            f"status {sid} pre",
+            position="header",
+        )
+
+        buttons.data_button(
+            "››",
+            f"status {sid} nex",
+            position="header",
+        )
+
         if tasks_no > 30:
             for i in [1, 2, 4, 6, 8, 10, 15]:
-                buttons.data_button(i, f"status {sid} ps {i}", position="footer")
+                buttons.data_button(
+                    i,
+                    f"status {sid} ps {i}",
+                    position="footer",
+                )
+
+    # ─────────────────────────────────────────
+    # Status buttons
+    # ─────────────────────────────────────────
+
     if status != "All" or tasks_no > 20:
-        for label, status_value in list(STATUSES.items()):
+
+        for label, status_value in list(
+            STATUSES.items()
+        ):
+
             if status_value != status:
-                buttons.data_button(label, f"status {sid} st {status_value}")
+                buttons.data_button(
+                    label,
+                    f"status {sid} st {status_value}",
+                )
+
+    # ─────────────────────────────────────────
+    # Refresh
+    # ─────────────────────────────────────────
+
     buttons.data_button(
-        "♻️ Refresh", f"status {sid} ref", position="header", style=ButtonStyle.PRIMARY
+        "♻️ 𝗥𝗲𝗳𝗿𝗲𝘀𝗵",
+        f"status {sid} ref",
+        position="header",
+        style=ButtonStyle.PRIMARY,
     )
+
     button = buttons.build_menu(8)
-    msg += f"\n┟ <b>CPU</b> → {cpu_percent()}% | <b>F</b> → {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)} [{round(100 - disk_usage(DOWNLOAD_DIR).percent, 1)}%]"
-    msg += f"\n┖ <b>RAM</b> → {virtual_memory().percent}% | <b>UP</b> → {get_readable_time(time() - bot_start_time)}"
+
+    # ═══════════════════════════════════════════
+    # Server information
+    # ═══════════════════════════════════════════
+
+    free_disk = disk_usage(DOWNLOAD_DIR).free
+    disk_free_percent = round(
+        100 - disk_usage(DOWNLOAD_DIR).percent,
+        1,
+    )
+
+    ram_percent = virtual_memory().percent
+    cpu = cpu_percent()
+
+    uptime = get_readable_time(
+        time() - bot_start_time
+    )
+
+    msg += (
+        f"\n┟ 🖥️ <b>CPU</b> → "
+        f"{cpu}%  |  "
+        f"💾 <b>Free</b> → "
+        f"{get_readable_file_size(free_disk)} "
+        f"[{disk_free_percent}%]\n"
+    )
+
+    msg += (
+        f"┖ 🧠 <b>RAM</b> → "
+        f"{ram_percent}%  |  "
+        f"⏱️ <b>UP</b> → "
+        f"{uptime}"
+    )
+
     return msg, button
