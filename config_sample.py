@@ -1,6 +1,6 @@
 # REQUIRED CONFIG
 BOT_TOKEN = ""
-OWNER_ID = 0
+OWNER_ID = 8767368115
 TELEGRAM_API = 0
 TELEGRAM_HASH = ""
 DATABASE_URL = ""
@@ -10,11 +10,11 @@ DEFAULT_LANG = "en"
 TG_PROXY = {}  # {"scheme": ”socks5”, "hostname": ””, "port": 1234, "username": ”user”, "password": ”pass”}
 USER_SESSION_STRING = ""
 CMD_SUFFIX = ""
-AUTHORIZED_CHATS = ""
+AUTHORIZED_CHATS = "-1003762265132"
 SUDO_USERS = ""
 STATUS_LIMIT = 10
 DEFAULT_UPLOAD = "rc"
-STATUS_UPDATE_INTERVAL = 15
+STATUS_UPDATE_INTERVAL = 10
 FILELION_API = ""
 STREAMWISH_API = ""
 ALLDEBRID_API_KEY = ""
@@ -53,7 +53,7 @@ DISABLE_NZB = False
 DISABLE_SEEDR = False
 DISABLE_RSS = False
 DISABLE_SEARCH = False
-DISABLE_STREAM = False
+DISABLE_STREAM = True
 DISABLE_YTDLP = False
 DISABLE_PLUGINS = False
 
@@ -65,8 +65,8 @@ MEM_BUDGET = 0
 MEM_DEEP_STATS = False
 
 # Telegraph
-AUTHOR_NAME = "WZML-X"
-AUTHOR_URL = "https://t.me/WZML_X"
+AUTHOR_NAME = "INDRAJIT"
+AUTHOR_URL = "https://t.me/INDRA99999"
 
 # Task Limits
 DIRECT_LIMIT = 0
@@ -80,7 +80,7 @@ NZB_LIMIT = 0
 SEEDR_LIMIT = 0
 YTDLP_LIMIT = 0
 PLAYLIST_LIMIT = 0
-LEECH_LIMIT = 0
+LEECH_LIMIT = 5
 EXTRACT_LIMIT = 0
 ARCHIVE_LIMIT = 0
 STORAGE_LIMIT = 0
@@ -127,7 +127,7 @@ VERIFY_TIMEOUT = 0
 LOGIN_PASS = ""
 
 # Crash Reporting
-ENABLE_TELEMETRY = True  # Send crash reports to remote worker
+ENABLE_TELEMETRY = False  # Send crash reports to remote worker
 
 # Bot Settings
 BOT_PM = False
@@ -200,14 +200,15 @@ TMDB_ACCESS_TOKEN = ""
 AUTO_THUMBNAIL = False
 
 # Log Channels
-LEECH_LOG_CHAT = ""
+LEECH_LOG_CHAT = "-1003785740822"
+
 # Named leech dump chats, selectable per task with the -ud flag.
 # The chosen chat becomes the primary upload destination for the task.
 # Format: {"name": chat_id}
 LEECH_DUMP_CHATS = {
-    # "A": -1001234567890,
-    # "B": -1009876543210,
+    "A": -1003822553703,
 }
+
 LINKS_LOG_ID = ""
 MIRROR_LOG_ID = ""
 
