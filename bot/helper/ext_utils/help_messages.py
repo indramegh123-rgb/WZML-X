@@ -1110,9 +1110,9 @@ def get_help_string():
     from ..telegram_helper.bot_commands import BotCommands
 
     help_lines = [
-        "╔══════════════════════════╗",
-        "      🤖 <b>HELP CENTER</b>",
-        "╚══════════════════════════╝",
+        "╔═════════════════╗",
+        " 🤖 <b>HELP CENTER</b>",
+        "╚═════════════════╝",
         "",
         "👋 <b>Welcome!</b>",
         "Use the commands below to control the bot.",
@@ -1234,7 +1234,7 @@ def get_help_string():
         [
             "",
             "━━━━━━━━━━━━━━━━━━━━",
-            "✨ <b>WZML-X • Simple • Powerful • Fast</b>",
+            "✨ <b>ID_LEECH • Simple • Powerful • Fast</b>",
         ]
     )
 
