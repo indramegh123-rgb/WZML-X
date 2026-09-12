@@ -42,7 +42,7 @@ from ..ext_utils.files_utils import (
 from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import check_running_tasks, start_from_queued
-from ..mirror_leech_utils.upload_utils.multi_upload import MultiUphosterUpload
+from ..mirror_leech_utils.uphoster_utils.multi_upload import MultiUphosterUpload
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..mirror_leech_utils.upload_utils.mega_upload import add_mega_upload
