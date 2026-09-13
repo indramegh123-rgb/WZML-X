@@ -869,16 +869,16 @@ class TaskListener(TaskConfig):
             )
 
             msg = (
-                "╭━━━━━━━━━━━━━━━━━━━╮\n"
-                "┃ 👑 𝐋𝐄𝐄𝐂𝐇 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 👑\n"
-                "┣━━━━━━━━━━━━━━━━━━━┫\n"
+                "╭━━━━━━━━━━━━━━━━╮\n"
+                "┃👑 𝐋𝐄𝐄𝐂𝐇 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 👑\n"
+                "┣━━━━━━━━━━━━━━━━┫\n"
                 f"┃ 📦 𝐓𝐀𝐒𝐊 𝐒𝐈𝐙𝐄 → {task_size}\n"
                 f"┃ ⏱️ 𝐓𝐈𝐌𝐄 𝐓𝐀𝐊𝐄𝐍 → {time_taken}\n"
                 f"┃ 📥 𝐈𝐍 𝐌𝐎𝐃𝐄 → {in_mode}\n"
                 f"┃ 📤 𝐎𝐔𝐓 𝐌𝐎𝐃𝐄 → {out_mode}\n"
                 f"┃ 📁 𝐓𝐎𝐓𝐀𝐋 𝐅𝐈𝐋𝐄𝐒 → {folders}\n"
                 f"┃ 👤 𝐓𝐀𝐒𝐊 𝐁𝐘 → {user_mention}\n"
-                "┣━━━━━━━━━━━━━━━━━━━┫\n"
+                "┣━━━━━━━━━━━━━━━━┫\n"
                 "┃ 📂 𝐅𝐈𝐋𝐄𝐒 𝐋𝐈𝐒𝐓\n"
             )
 
@@ -892,9 +892,9 @@ class TaskListener(TaskConfig):
 
             if self.bot_pm:
                 pmsg = (
-                    "╭━━━━━━━━━━━━━━━━━━━━━╮\n"
+                    "╭━━━━━━━━━━━━━━━━━╮\n"
                     "┃ 👑 𝐀𝐂𝐓𝐈𝐎𝐍 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 👑\n"
-                    "┣━━━━━━━━━━━━━━━━━━━━━┫\n"
+                    "┣━━━━━━━━━━━━━━━━━┫\n"
                     f"┃ 👤 𝐔𝐒𝐄𝐑 → {user_mention}\n"
                     "┃\n"
                     "┃ ✅ 𝐅𝐈𝐋𝐄𝐒 𝐒𝐄𝐍𝐓 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋𝐋𝐘\n"
@@ -905,7 +905,7 @@ class TaskListener(TaskConfig):
                     "┃ 💡 You can use the buttons\n"
                     "┃    below to access your files.\n"
                     "┃\n"
-                    "╰━━━━━━━━━━━━━━━━━━━━━╯"
+                    "╰━━━━━━━━━━━━━━━━━╯"
                 )
 
                 if self.is_super_chat:
@@ -916,7 +916,7 @@ class TaskListener(TaskConfig):
 
             if not files and not self.is_super_chat:
                 msg += (
-                    "╰━━━━━━━━━━━━━━━━━━━╯"
+                    "╰━━━━━━━━━━━━━━━━╯"
                 )
 
                 await send_message(
@@ -1017,7 +1017,7 @@ class TaskListener(TaskConfig):
                         final_msg = (
                             msg
                             + fmsg
-                            + "╰━━━━━━━━━━━━━━━━━━━╯"
+                            + "╰━━━━━━━━━━━━━━━━╯"
                         )
 
                         await send_message(
@@ -1033,7 +1033,7 @@ class TaskListener(TaskConfig):
                     final_msg = (
                         msg
                         + fmsg
-                        + "╰━━━━━━━━━━━━━━━━━━━╯"
+                        + "╰━━━━━━━━━━━━━━━━╯"
                     )
 
                     await send_message(
